@@ -2,16 +2,17 @@ version: "3.9"
 
 services:
   devopsdb:
-    image: jashu07/javaappdb
+    image: jashu07/auto:javadb
     ports:
       - "3306:3306"
     deploy:
       replicas: 3
     networks:
       - mynetwork
-
+    volumes:
+      - databasevolume:/var/lib/mysql
   application:
-    image: jashu07/javaappui
+    image: jashu07/auto:javaapp
     ports:
       - "1111:8080"
     deploy:
@@ -24,3 +25,6 @@ services:
 networks:
   mynetwork:
     driver: overlay
+
+volumes:
+  databasevolume:
