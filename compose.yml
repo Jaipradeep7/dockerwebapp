@@ -1,24 +1,53 @@
 version: "3.9"
 
 services:
+
   devopsdb:
     image: jashu07/auto:javadb
-    ports:
-      - "3306:3306"
     deploy:
       replicas: 1
     networks:
       - mynetwork
     volumes:
       - databasevolume:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.0-alpine
+    deploy:
+      replicas: 1
+    networks:
+      - mynetwork
+    volumes:
+      - redisvolume:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   application:
     image: jashu07/auto:javaapp
     ports:
       - "1111:8080"
     deploy:
       replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 5
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_SESSION_STORE_TYPE=redis
     depends_on:
       - devopsdb
+      - redis
     networks:
       - mynetwork
 
@@ -28,3 +57,4 @@ networks:
 
 volumes:
   databasevolume:
+  redisvolume:
